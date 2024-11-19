@@ -27,6 +27,35 @@
 # Usage Example:
 #   main.s <M0_PATH> <M1_PATH> <INPUT_PATH> <OUTPUT_PATH>
 # =====================================
+.globl classify
+
+.text
+# =====================================
+# NEURAL NETWORK CLASSIFIER
+# =====================================
+# Description:
+#   Command line program for matrix-based classification
+#
+# Command Line Arguments:
+#   1. M0_PATH      - First matrix file location
+#   2. M1_PATH      - Second matrix file location
+#   3. INPUT_PATH   - Input matrix file location
+#   4. OUTPUT_PATH  - Output file destination
+#
+# Register Usage:
+#   a0 (int)        - Input: Argument count
+#                   - Output: Classification result
+#   a1 (char **)    - Input: Argument vector
+#   a2 (int)        - Input: Silent mode flag
+#                     (0 = verbose, 1 = silent)
+#
+# Error Codes:
+#   31 - Invalid argument count
+#   26 - Memory allocation failure
+#
+# Usage Example:
+#   main.s <M0_PATH> <M1_PATH> <INPUT_PATH> <OUTPUT_PATH>
+# =====================================
 classify:
     # Error handling
     li t0, 5
@@ -166,7 +195,18 @@ classify:
     
     lw t0, 0(s3)
     lw t1, 0(s8)
-    # mul a0, t0, t1 # FIXME: Replace 'mul' with your own implementation
+    
+    # Replace mul with repeated addition
+    mv t2, zero      # Initialize result
+    mv t3, t0        # Copy first number
+mul_loop1:
+    beqz t3, mul_done1
+    add t2, t2, t1   # Add second number
+    addi t3, t3, -1  # Decrement counter
+    j mul_loop1
+mul_done1:
+    mv a0, t2
+    
     slli a0, a0, 2
     jal malloc 
     beq a0, x0, error_malloc
@@ -203,8 +243,17 @@ classify:
     mv a0, s9 # move h to the first argument
     lw t0, 0(s3)
     lw t1, 0(s8)
-    # mul a1, t0, t1 # length of h array and set it as second argument
-    # FIXME: Replace 'mul' with your own implementation
+    
+    # Replace mul with repeated addition
+    mv t2, zero      # Initialize result
+    mv t3, t0        # Copy first number
+mul_loop2:
+    beqz t3, mul_done2
+    add t2, t2, t1   # Add second number
+    addi t3, t3, -1  # Decrement counter
+    j mul_loop2
+mul_done2:
+    mv a1, t2
     
     jal relu
     
@@ -226,7 +275,18 @@ classify:
     
     lw t0, 0(s3)
     lw t1, 0(s6)
-    # mul a0, t0, t1 # FIXME: Replace 'mul' with your own implementation
+    
+    # Replace mul with repeated addition
+    mv t2, zero      # Initialize result
+    mv t3, t0        # Copy first number
+mul_loop3:
+    beqz t3, mul_done3
+    add t2, t2, t1   # Add second number
+    addi t3, t3, -1  # Decrement counter
+    j mul_loop3
+mul_done3:
+    mv a0, t2
+    
     slli a0, a0, 2
     jal malloc 
     beq a0, x0, error_malloc
@@ -286,8 +346,17 @@ classify:
     mv a0, s10 # load o array into first arg
     lw t0, 0(s3)
     lw t1, 0(s6)
-    mul a1, t0, t1 # load length of array into second arg
-    # FIXME: Replace 'mul' with your own implementation
+    
+    # Replace mul with repeated addition
+    mv t2, zero      # Initialize result
+    mv t3, t0        # Copy first number
+mul_loop4:
+    beqz t3, mul_done4
+    add t2, t2, t1   # Add second number
+    addi t3, t3, -1  # Decrement counter
+    j mul_loop4
+mul_done4:
+    mv a1, t2
     
     jal argmax
     

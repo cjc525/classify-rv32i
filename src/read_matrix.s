@@ -35,111 +35,105 @@
 #   Caller is responsible for freeing returned matrix pointer
 # ==============================================================================
 read_matrix:
-    
-    # Prologue
-    addi sp, sp, -40
-    sw ra, 0(sp)
-    sw s0, 4(sp)
-    sw s1, 8(sp)
-    sw s2, 12(sp)
-    sw s3, 16(sp)
-    sw s4, 20(sp)
+   # Prologue
+   addi sp, sp, -40
+   sw ra, 0(sp)
+   sw s0, 4(sp)
+   sw s1, 8(sp)
+   sw s2, 12(sp)
+   sw s3, 16(sp)
+   sw s4, 20(sp)
+   
+   # Save row/col pointers
+   mv s3, a1         
+   mv s4, a2         
 
-    mv s3, a1         # save and copy rows
-    mv s4, a2         # save and copy cols
+   # Open file
+   li a1, 0          # Read mode
+   jal fopen
+   li t0, -1
+   beq a0, t0, fopen_error
+   mv s0, a0         # Save file descriptor
 
-    li a1, 0
+   # Read dimensions
+   mv a0, s0
+   addi a1, sp, 28   # Buffer for dimensions
+   li a2, 8          # Read 8 bytes (2 ints)
+   jal fread
+   li t0, 8
+   bne a0, t0, fread_error
 
-    jal fopen
+   # Store dimensions
+   lw t1, 28(sp)     # rows
+   lw t2, 32(sp)     # cols
+   sw t1, 0(s3)      
+   sw t2, 0(s4)      
 
-    li t0, -1
-    beq a0, t0, fopen_error   # fopen didn't work
+   # Calculate matrix size (rows * cols)
+   mv s1, zero
+   mv t3, zero       # Counter
+mul_loop:
+   beq t3, t2, mul_done
+   add s1, s1, t1
+   addi t3, t3, 1
+   j mul_loop
+mul_done:
+   
+   # Calculate bytes needed (elements * 4)
+   slli t3, s1, 2
+   sw t3, 24(sp)     # Save size
 
-    mv s0, a0        # file
+   # Allocate memory
+   lw a0, 24(sp)     
+   jal malloc
+   beq a0, x0, malloc_error
+   mv s2, a0         # Save matrix pointer
 
-    # read rows n columns
-    mv a0, s0
-    addi a1, sp, 28  # a1 is a buffer
+   # Read matrix data
+   mv a0, s0
+   mv a1, s2
+   lw a2, 24(sp)
+   jal fread
+   lw t3, 24(sp)
+   bne a0, t3, fread_error
 
-    li a2, 8         # look at 2 numbers
+   # Close file
+   mv a0, s0
+   jal fclose
+   li t0, -1
+   beq a0, t0, fclose_error
 
-    jal fread
+   # Return matrix pointer
+   mv a0, s2
 
-    li t0, 8
-    bne a0, t0, fread_error
-
-    lw t1, 28(sp)    # opening to save num rows
-    lw t2, 32(sp)    # opening to save num cols
-
-    sw t1, 0(s3)     # saves num rows
-    sw t2, 0(s4)     # saves num cols
-
-    # mul s1, t1, t2   # s1 is number of elements
-    # FIXME: Replace 'mul' with your own implementation
-
-    slli t3, s1, 2
-    sw t3, 24(sp)    # size in bytes
-
-    lw a0, 24(sp)    # a0 = size in bytes
-
-    jal malloc
-
-    beq a0, x0, malloc_error
-
-    # set up file, buffer and bytes to read
-    mv s2, a0        # matrix
-    mv a0, s0
-    mv a1, s2
-    lw a2, 24(sp)
-
-    jal fread
-
-    lw t3, 24(sp)
-    bne a0, t3, fread_error
-
-    mv a0, s0
-
-    jal fclose
-
-    li t0, -1
-
-    beq a0, t0, fclose_error
-
-    mv a0, s2
-
-    # Epilogue
-    lw ra, 0(sp)
-    lw s0, 4(sp)
-    lw s1, 8(sp)
-    lw s2, 12(sp)
-    lw s3, 16(sp)
-    lw s4, 20(sp)
-    addi sp, sp, 40
-
-    jr ra
+   # Epilogue
+   lw ra, 0(sp)
+   lw s0, 4(sp)
+   lw s1, 8(sp)
+   lw s2, 12(sp)
+   lw s3, 16(sp)
+   lw s4, 20(sp)
+   addi sp, sp, 40
+   ret
 
 malloc_error:
-    li a0, 26
-    j error_exit
-
+   li a0, 26
+   j error_exit
 fopen_error:
-    li a0, 27
-    j error_exit
-
+   li a0, 27
+   j error_exit
 fread_error:
-    li a0, 29
-    j error_exit
-
+   li a0, 29
+   j error_exit 
 fclose_error:
-    li a0, 28
-    j error_exit
-
+   li a0, 28
+   j error_exit
 error_exit:
-    lw ra, 0(sp)
-    lw s0, 4(sp)
-    lw s1, 8(sp)
-    lw s2, 12(sp)
-    lw s3, 16(sp)
-    lw s4, 20(sp)
-    addi sp, sp, 40
-    j exit
+   lw ra, 0(sp)
+   lw s0, 4(sp)
+   lw s1, 8(sp)
+   lw s2, 12(sp)
+   lw s3, 16(sp)
+   lw s4, 20(sp)
+   addi sp, sp, 40
+   j exit

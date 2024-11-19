@@ -34,10 +34,26 @@ dot:
     li t0, 0            
     li t1, 0         
 
-loop_start:
+start:
     bge t1, a2, loop_end
     # TODO: Add your own implementation
+    # first array
+    mul t2, t1, a3
+    slli t2, t2, 2        # int : 4byte
+    add t2, a0, t2
+    lw t3, 0(t2)
+    # second array
+    mul t4, t1, a4
+    slli t4, t4, 2
+    add t4, a1, t4
+    lw t5, 0(t4)
 
+    # product and add to result
+    mul t6, t3, t5        
+    add t0, t0, t6        
+    
+    addi t1, t1, 1        
+    j start
 loop_end:
     mv a0, t0
     jr ra
